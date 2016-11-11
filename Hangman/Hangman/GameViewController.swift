@@ -9,20 +9,131 @@
 import UIKit
 
 class GameViewController: UIViewController {
-
+    var lives = 6
+    var phrase : String?
+    
+    @IBOutlet weak var guesses: UITextField!
+    @IBOutlet weak var pastGuesses: UILabel!
+    @IBOutlet weak var guessButton: UIButton!
+    @IBOutlet weak var phraseLabel: UILabel!
+    @IBOutlet weak var hangman: UIImageView!
+    
+    
+    let winGame = UIAlertController(title: "You Won!", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+    let loseGame = UIAlertController(title: "You Lost!", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+    
+    @IBAction func textFieldDidChange(sender: UITextField) {
+        
+        let lastChar = sender.text?.unicodeScalars
+        if sender.text?.characters.count != 0 && (!(CharacterSet.letters.contains((lastChar?[(lastChar?.index(before: (lastChar?.endIndex)!))!])!))) {
+            sender.text?.remove(at: (sender.text?.index(before: (sender.text?.endIndex)!))!)
+        }
+        if ((sender.text?.characters.count)! > 1) {
+            var empty = ""
+            empty.append((sender.text?[(sender.text?.index((sender.text?.startIndex)!, offsetBy: (sender.text?.characters.count)! - 1))!])!)
+            sender.text = empty
+        }
+        sender.text = sender.text?.uppercased()
+    }
+    
+    @IBAction func guessButton(_ sender: UIButton) {
+        if let letter = guesses.text {
+            if !(pastGuesses.text?.contains(letter))! && guesses.text != "" {
+                var updateString = ""
+                var counter = 0
+                var correct = 0
+                for x in (phrase?.characters)! {
+                    
+                    var temp = ""
+                    temp.append(x)
+                    temp = temp.lowercased()
+                    
+                    if x == letter[letter.startIndex] || letter[letter.startIndex] == temp[temp.startIndex] {
+                        updateString.append(x)
+                        correct = 1
+                    } else {
+                        if (phrase?[(phrase?.index((phrase?.startIndex)!, offsetBy: counter))!])! == " " {
+                            updateString.append(" ")
+                        } else if phraseLabel.text![(phraseLabel.text?.index((phraseLabel.text?.startIndex)!, offsetBy: counter))!] != "_" {
+                            updateString.append(x)
+                        } else {
+                            updateString.append("_")
+                        }
+                    }
+                    counter += 1
+                }
+                
+                phraseLabel.text = updateString
+                if (correct == 0 && !(pastGuesses.text?.contains(letter))!) {
+                    pastGuesses.text?.append(letter)
+                    lives -= 1
+                    switch lives {
+                    case 5:
+                        hangman.image = UIImage(named: "hangman6.gif")
+                    case 4:
+                        hangman.image = UIImage(named: "hangman5.gif")
+                    case 3:
+                        hangman.image = UIImage(named: "hangman4.gif")
+                    case 2:
+                        hangman.image = UIImage(named: "hangman3.gif")
+                    case 1:
+                        hangman.image = UIImage(named: "hangman2.gif")
+                    case 0:
+                        hangman.image = UIImage(named: "hangman1.gif")
+                    default:
+                        break
+                    }
+                    if (lives == 0) {
+                        self.present(loseGame, animated: true, completion: nil)
+                    }
+                } else if !updateString.contains("_") {
+                    self.present(winGame, animated: true, completion: nil)
+                }
+                guesses.text = ""
+            }
+        }
+    }
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
-        let hangmanPhrases = HangmanPhrases()
-        let phrase = hangmanPhrases.getRandomPhrase()
-        print(phrase)
+        setupParams()
+        guesses.addTarget(self, action: #selector(textFieldDidChange), for: UIControlEvents.editingChanged)
+        winGame.addAction(UIAlertAction(title: "New Game", style: UIAlertActionStyle.default, handler: {(alert: UIAlertAction!) in self.setupParams()}))
+        loseGame.addAction(UIAlertAction(title: "New Game", style: UIAlertActionStyle.default, handler: {(alert: UIAlertAction!) in self.setupParams()}))
+        view.addSubview(hangman)
     }
+    
+    //setup
+    func setupParams() {
+        lives = 6
+        pastGuesses.text = ""
+        
+        hangman.image = UIImage(named: "hangman7.gif")
+        let hangmanPhrases = HangmanPhrases()
+        phrase = hangmanPhrases.getRandomPhrase()
+        view.addSubview(hangman)
+        phraseLabel.text = ""
+        for x in (phrase?.characters)! {
+            if x == " " {
+                phraseLabel.text?.append(x)
+            } else {
+                phraseLabel.text?.append("_")
+            }
+        }
+        print(phrase)
+
+    }
+    
+    
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
+    
     
 
     /*
